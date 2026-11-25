@@ -42,9 +42,32 @@ def _check_no_padding(line):
         _fail("entry must not start or end with whitespace")
 
 
+def _check_no_double_spaces(line):
+    if "  " in line:
+        _fail("entry must not contain double spaces")
+
+
+def _check_ends_with_punctuation(line):
+    if line and line[-1] not in ".!?":
+        _fail("entry should end with terminal punctuation (. ! ?)")
+
+
 def _check_printable(line):
     if not line.isprintable():
         _fail("entry must contain only printable characters")
+
+
+def _check_matches_entry_file(line):
+    """The shipped entry.txt next to this script must match the line.
+
+    Guards against the LINE constant and the shipped entry drifting apart.
+    """
+    entry_file = Path(__file__).resolve().parent / "entry.txt"
+    if not entry_file.exists():
+        _fail("entry.txt is missing next to main.py")
+    shipped = entry_file.read_text(encoding="utf-8").rstrip("\n")
+    if shipped != line:
+        _fail("LINE constant does not match entry.txt")
 
 
 def _check_no_control(line):
@@ -58,8 +81,11 @@ VALIDATORS = (
     _check_length,
     _check_one_line,
     _check_no_padding,
+    _check_no_double_spaces,
+    _check_ends_with_punctuation,
     _check_printable,
     _check_no_control,
+    _check_matches_entry_file,
 )
 
 
@@ -85,6 +111,11 @@ def run(argv):
     )
     path = emit(LINE, out_dir)
     print(f"wrote {path} ({len(LINE)} chars)")
+    print(
+        f"validated: {len(LINE)} chars, {len(LINE.split())} words, "
+        f"{CHAR_LIMIT - len(LINE)} chars under the {CHAR_LIMIT} limit, "
+        f"{len(VALIDATORS)} checks passed"
+    )
     return 0
 
 
